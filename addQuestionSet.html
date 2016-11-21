@@ -1,0 +1,173 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+
+<style>
+
+
+#spinner {
+width: 100px;
+height: 100px;
+-webkit-animation: sweep 1s infinite linear;
+border-radius:75px;
+border-bottom:5px dotted black;
+margin: 50px auto 10px;
+
+}
+@-webkit-keyframes sweep { to { -webkit-transform: rotate(360deg); } }
+
+.spinner p{
+color: black;
+text-align:center;
+margin-top: -75px;
+}
+</style>
+
+</head>
+<body>
+
+<div class="block form-group">
+  <label for="aSet">Choose a question set</label>
+  <select id="aSet" name="aSet">
+  <option value="New" selected> Add New
+  </select>
+</div>
+<input type="hidden" id="chkOutQId" value=""> 
+<input type="hidden" id="chkInQId" value=""> 
+<br>
+<div class="block form-group">
+  <label for="setName">Check in/out set name</label>
+  <input type="text" id="setName" style="width: 100%;" value="Item" required>
+</div>
+
+<div class="block form-group">
+<span>Question type</span><br>
+<input type="radio" name="qType" value="CHECKBOX" checked> Checkboxes<br>
+<input type="radio" name="qType" value="LIST"> Choose from a list<br>
+<input type="radio" name="qType" value="MULTIPLE_CHOICE"> Multiple Choice<br>
+<input type="radio" name="qType" value="TEXT_MC"> Text with Multiple Choice<br>
+<input type="radio" name="qType" value="TEXT_List"> Text with Listbox<br>
+<input type="radio" name="qType" value="TEXT_Chk"> Text with Checkboxes
+</div>
+
+
+<div class="block form-group">
+  <label for="chkOutEmptyTxt">Check out empty text</label>
+  <input type="text" id="chkOutEmptyTxt" style="width: 100%;" value="All Items Are Checked Out" required>
+</div>
+<div class="block form-group">
+  <label for="chkInEmptyTxt">Check in empty text</label>
+  <input type="text" id="chkInEmptyTxt" style="width: 100%;" value="All Items Are Checked In" required>
+</div>
+
+<!--<div class="block form-group" style="float:right">-->
+<div class="block form-group">
+<button class="action" id="addButton" onClick="submitData()">Add</button>
+</div>
+<span id="result"></span>
+<br>
+
+<!--<div id="description" class="block form-group">-->
+<div id="description">
+<p>Two questions will be added to your form. In the “Check out” question you can add your items to keep track of.  </p>
+<p>This will create one question for items that are IN and another that are OUT.  Items will be moved between the questions on submit.</p>
+</div>
+
+<div id="saving" style="display:none" class="spinner">
+<div id="spinner"></div>
+<p>Processing...</p>
+</div>
+
+</body>
+</html>
+
+
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+
+<script>
+//http://jgerigmeyer.github.io/jquery-loading-overlay/demo/
+ $(function() {
+   google.script.run.withSuccessHandler(populateSetList).withFailureHandler(fail).getSetKeys();
+//   google.script.run.withSuccessHandler(populateFormFields).withFailureHandler(fail).getSetData("New");
+
+   $( "#aSet" ).change(function(){
+      var chosen = $('option:selected', $(this)).val();
+//      google.script.run.withSuccessHandler(updateResult).withFailureHandler(fail).returnData(chosen);
+
+      if (chosen == "New"){
+        $( "#addButton").html("Add");
+      } else {
+        $( "#addButton").html("Save");
+      }
+       google.script.run.withSuccessHandler(populateFormFields).withFailureHandler(fail).getSetData(chosen);
+
+   });
+});
+
+//http://stackoverflow.com/questions/4506219/how-to-change-onclick-event-with-jquery
+
+
+function populateSetList(setKeys){
+    for (var i=0; i< setKeys.length; i++) {
+        $('#aSet').append($('<option>').text(setKeys[i]).val(setKeys[i]));
+    };
+}
+ 
+ function populateFormFields(setData){
+
+ $( "#result").html(setData);
+ $('#setName').val(setData.setName);
+ $( "input[name=qType]" ).val([setData.qType]);
+ $('#chkOutEmptyTxt').val(setData.chkOutEmptyTxt);
+ $('#chkInEmptyTxt').val(setData.chkInEmptyTxt);
+ $('#chkOutQId').val(setData.chkOutQId);
+ $('#chkInQId').val(setData.chkInQId);
+
+ if (setData.chkOutQId !=""){
+ $('#setName').prop('disabled', true);
+ $( "input[name=qType]" ).prop('disabled', true);
+ } else {
+  $('#setName').prop('disabled', false);
+ $( "input[name=qType]" ).prop('disabled', false);
+ 
+ }
+ 
+ 
+ }
+
+ 
+ function updateResult(value){
+ $( "#result").html(value);
+ }
+
+function submitData(){
+$('#description').hide();
+$('#saving').show();
+
+
+var setName = $('#setName').val();
+var qType = $("input[name=qType]:checked").val();
+var chkOutEmptyTxt = $('#chkOutEmptyTxt').val();
+var chkInEmptyTxt = $('#chkInEmptyTxt').val();
+var chkOutQId = $('#chkOutQId').val();
+var chkInQId = $('#chkInQId').val();
+
+var dataSet = {'setName':setName,'qType':qType,'chkOutEmptyTxt':chkOutEmptyTxt,'chkInEmptyTxt':chkInEmptyTxt,'chkOutQId':chkOutQId,'chkInQId':chkInQId};
+
+//google.script.run.withSuccessHandler(returnSubmitSuccess).returnData(dataSet);
+google.script.run.withSuccessHandler(returnSubmitSuccess).createQuestionSet(dataSet);
+}
+
+function returnSubmitSuccess(result){
+//alert(result.setName);
+$('#result').html("Sucess!!");
+google.script.host.close();
+}
+
+function fail(){
+$('#result').html("Fail!!!");
+}
+
+</script>

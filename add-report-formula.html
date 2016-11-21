@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+<style>
+select {
+  text-align: left;
+}
+#periodLabels {
+list-style: none; 
+margin: 0;
+padding: 0;
+font-weight: bold;
+}
+#periodLabels li {
+border: 2px solid #fff;
+padding: 5px 5px 5px 20px;
+margin: 0;
+background: #F0F0F0 url(https://docs.google.com/drawings/d/1iac2siLed-04v-SNYDEvpry1XPTPZGnWEStyjdIAazo/pub?w=30&h=25) no-repeat left center;
+}
+#periodLabels img {
+float:right;
+}
+
+#periodLabels li:hover {
+    background-color: E8E8E8;
+}
+#labelBox {
+    border: 1px solid;
+    margin-top: 5px;
+}
+#periodLabels {
+    height: 260px;
+    overflow: auto;
+}
+
+.block2 {
+    margin-bottom: 10px;
+}
+
+.alert{
+color: red;
+ font-weight: bold;
+} 
+</style>
+
+<style>
+#spinner {
+width: 100px;
+height: 100px;
+-webkit-animation: sweep 1s infinite linear;
+border-radius:75px;
+border-bottom:5px dotted black;
+margin: 10px auto;
+}
+@-webkit-keyframes sweep { to { -webkit-transform: rotate(360deg); } }
+
+.spinner p{
+text-align:center;
+}
+</style>
+
+</head>
+<body>
+
+<div id="loading" class="spinner">
+<div id="spinner"></div>
+<p>Loading...</p>
+</div>
+<div id="saving" style="display:none" class="spinner">
+<div id="spinner"></div>
+<p>Creating Lab...</p>
+</div>
+
+<div id="theForm" style="display:none">
+<div class="block2">
+  <span title="This will be the name of the lab sheet"><label for="labName">Lab name:</label>
+  <input type="text" name="labName" id="labName" style="width: 168px;"></span>
+  <div class="alert" id='labNameAlert' ></div>
+</div>
+<div class="block2">
+  <span title="Each day this add-on will remove the previous day and add the next.  This is the number of days that is maintained including weekends."><label for="nOfDaysToCreate">Number of days to maintain:</label>
+  <input type="text" name="nOfDaysToCreate" id="nOfDaysToCreate" class="numeric" style="width: 65px;"></span>
+</div>
+<div class="block2">
+  <span title="These will become the period headings on each lab sheet."><label for="periodAdd">Add periods:</label><br>
+  <input type="text" name="periodAdd" id="periodAdd" style="width: 156px;">
+  <button id="addPeriod" onClick="addPeriod()">Add</button><br></span>
+  <div id="labelBox" style="width: 230px;">  
+     <ul id="periodLabels" name="periodLabels">
+     </ul>
+  </div>
+</div>
+<div class="block">
+<span title="Checking this will save the days to maintain and periods for the next time you add a lab."><input type="checkbox" id="defaultCheck" checked>
+<label for="defaultCheck">Save as default for new labs</label></span>
+</div>
+  <br>
+<div>
+  <button class="action" onclick="saveSettings()">Add Lab</button> 
+  <button onclick="google.script.host.close()">Cancel</button>
+  </div>
+  <div class="alert" id='result' ></div>
+</div>
+
+  
+  
+  
+</body>
+</html>
+
+<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+ <script src="//code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
+ <script src="https://0ee4a8a2822700db02661ad5999018b255ece16f.googledrive.com/host/0Bwyqwd2fAHMMTW8tc2NoMEx2Qlk/jquery.numeric.js"></script>
+  
+  <script>
+$(document).ready(function() {  
+$("#loading").hide();
+$("#theForm").show();
+    //sortable
+    $( "#periodLabels" ).sortable();
+    $( "#periodLabels" ).disableSelection();  
+
+$("#periodAdd").keyup(function(event){
+    if(event.keyCode == 13){
+        $("#addPeriod").click();
+    }
+});
+
+google.script.run.withSuccessHandler(populateDefaults).getDefaults();
+
+$(".numeric").numeric({ decimal: false, negative: false });
+
+});
+
+function populateDefaults(defaultsObj){
+  var defDays = defaultsObj.days;
+  var defLabels = defaultsObj.labels;
+  
+   $( "#nOfDaysToCreate" ).val(defDays);
+   
+   for (var i=0; i< defLabels.length; i++){
+//      addPeriod(defLabels[i]);
+      addPeriod(defLabels[i]);
+//      $("ul").append("<li>"+"test"+"</li>");
+   }
+
+};
+
+function addPeriod(valueToAdd){
+if (!valueToAdd){ valueToAdd = $("#periodAdd").val();}
+
+if (valueToAdd != ""){
+$("ul").append("<li>"+valueToAdd+"<a href='#' onclick='deleteLi()'><img src='https://docs.google.com/drawings/d/1iJKrk_cAme6AQmrKBbpEqV3oGlmSkAf-3edh7uLcbCc/pub?w=25&h=25'></a></li>");
+$("#periodAdd").val("");
+
+//$("#periodLabels li").unbind().click(function() {
+////change the background color to red before removing
+//$(this).css("background-color","#FF3700");
+//$(this).fadeOut(400, function(){
+//$(this).remove();
+//});
+//});
+};
+}
+
+  function saveSettings(){
+  var labName = $("#labName").val();
+  var nOfDaysToCreate = $("#nOfDaysToCreate").val();
+  var periodLabels = $('#periodLabels li').map(function(){ return $(this).text(); }).get();
+//  var periodLabels = $.extend({}, periodLabelsArray);
+  var defaultCheck = $("#defaultCheck").prop("checked");
+  $("#result").html("");
+  
+  if (periodLabels.length !=0 && labName != "" && nOfDaysToCreate != ""){
+    $("#theForm").hide();
+$("#saving").show();
+  
+  
+  google.script.run.withSuccessHandler(end).saveSettings(labName, nOfDaysToCreate, periodLabels, defaultCheck);
+//  google.script.run.launchAddLab();
+//  google.script.host.close();
+  } else{
+  $("#result").html("All fileds required!");
+  }
+  };  
+  
+  function end(result){
+  if (result == "completed"){
+  google.script.host.close();
+  } else {
+$("#saving").hide();
+$("#theForm").show();
+   $("#labNameAlert").html(result);
+  }
+  
+  };
+  
+  
+  function deleteLi(){
+  
+  $("#periodLabels li").unbind().click(function() {
+//change the background color to red before removing
+$(this).css("background-color","#FF3700");
+$(this).fadeOut(400, function(){
+$(this).remove();
+});
+});
+  };
+  
+  //bookmarks
+//  http://stackoverflow.com/questions/16615403/css-how-to-draw-circle-with-text-in-middle
+  
+  
+</script>

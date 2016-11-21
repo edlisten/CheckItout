@@ -1,0 +1,156 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+<link rel="stylesheet" href="https://dl.dropboxusercontent.com/u/2502583/switchbutton/jquery.switchButton.css">
+
+<style>
+
+
+#spinner {
+width: 100px;
+height: 100px;
+-webkit-animation: sweep 1s infinite linear;
+border-radius:75px;
+border-bottom:5px dotted black;
+margin: 50px auto 10px;
+
+}
+@-webkit-keyframes sweep { to { -webkit-transform: rotate(360deg); } }
+
+.spinner p{
+color: black;
+text-align:center;
+margin-top: -75px;
+}
+</style>
+
+</head>
+<body>
+<div id="loadingSpinner" class="spinner">
+<div id="spinner"></div>
+<p>Loading...</p>
+</div>
+
+
+<div id="form" style="display:none" >
+
+
+<div class="block form-group">
+<input type="checkbox" id="enableDisable">
+</div>
+
+<div class="block form-group append">
+<input type="checkbox" id="append">Append Name: 
+  <select id="nameQ" name="nameQ" disabled>
+  </select>
+
+</div>
+<div class="block form-group">
+<button class="action" id="saveButton" onClick="submitData()">Save</button>
+</div>
+
+<span id="result"></span>
+
+<div class="block form-group append">
+<br><br>Last process time <span id="runTime"></span> seconds.  This is the minimum time needed between form submissions. 
+</div>
+
+</div>
+
+</body>
+</html>
+
+
+<!--<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>-->
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+
+<script src="https://dl.dropboxusercontent.com/u/2502583/switchbutton/jquery.switchButton.js"></script>
+
+
+<script>
+ $(function() {
+//  $("#enableDisable").switchButton();
+   google.script.run.withSuccessHandler(populateDefaults).withFailureHandler(fail).defaultPrefs();
+   
+   $( "#append" ).change(function(){
+   var appendChecked = $( "#append" ).is(":checked");
+      if (appendChecked == true){
+        $( "#nameQ" ).prop('disabled', false);
+      } else {
+        $( "#nameQ" ).prop('disabled', true);
+      }
+   });
+   
+  
+   
+});
+
+function populateDefaults(defaults){
+   var itemsAndId = defaults.itemsAndId;
+   var appendSelected = defaults.appendSelected;
+   var submitTrigger = defaults.submitTrigger;
+   
+
+    for (var i=0; i< itemsAndId.length; i++) {
+        $('#nameQ').append($('<option>').text(itemsAndId[i].title).val(itemsAndId[i].id));
+    };
+    
+    
+//    alert(appendSelected);
+    if (appendSelected != ""){
+    $("div.append select").val(appendSelected);
+    $( "#nameQ" ).prop('disabled', false);
+    $( "#append" ).attr('checked', true);
+    }
+     
+$("#runTime").html(defaults.runTime);
+
+$("#enableDisable").attr('checked', submitTrigger);
+$("#enableDisable").switchButton();
+$("#enableDisable").change(function(){
+   if (this.checked){
+//   $("#result").html("on");
+   google.script.run.enableTrigger(true);
+//   submitData();
+   
+   } else {
+//   $("#result").html("off");
+   google.script.run.enableTrigger(false);
+   
+   }
+});
+
+$("#loadingSpinner").hide();
+$("#form").show();
+
+}
+
+function fail(){
+$("#result").html("Opps Fail");
+}
+
+function submitData(){
+   var prefs = {};
+   var appendChecked = $( "#append" ).is(":checked");
+   var appendId = "";
+      if (appendChecked == true){
+        appendId = $( "#nameQ" ).val();
+      } 
+      
+      prefs.appendId = appendId;
+      google.script.run.withSuccessHandler(close).savePreferences(prefs);
+// alert(appendId);     
+}
+
+function close(){
+google.script.host.close();
+
+}
+
+
+
+
+</script>
